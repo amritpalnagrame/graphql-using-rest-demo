@@ -1,5 +1,4 @@
 import express from 'express';
-import fetch from 'node-fetch';
 import {
   GraphQLSchema,
   GraphQLObjectType,
@@ -9,6 +8,8 @@ import {
   GraphQLNonNull,
 } from 'graphql';
 import { graphqlHTTP } from 'express-graphql';
+import { getUsers, getUser, getUserPosts } from './resolvers/userResolvers.js';
+import { getPosts, getPost, getPostAuthor } from './resolvers/postResolvers.js';
 
 const UserType = new GraphQLObjectType({
   name: 'User',
@@ -18,11 +19,7 @@ const UserType = new GraphQLObjectType({
     email: { type: new GraphQLNonNull(GraphQLString) },
     posts: {
       type: new GraphQLNonNull(new GraphQLList(PostType)),
-      resolve: async (parent) => {
-        const response = await fetch(`http://localhost:3000/posts?userId=${parent.id}`);
-        const data = await response.json();
-        return data;
-      },
+      resolve: getUserPosts,
     },
   }),
 });
@@ -35,11 +32,7 @@ const PostType = new GraphQLObjectType({
     content: { type: new GraphQLNonNull(GraphQLString) },
     author: {
       type: new GraphQLNonNull(UserType),
-      resolve: async (parent) => {
-        const response = await fetch(`http://localhost:3000/users/${parent.userId}`);
-        const data = await response.json();
-        return data;
-      },
+      resolve: getPostAuthor,
     },
   }),
 });
@@ -49,37 +42,21 @@ const QueryType = new GraphQLObjectType({
   fields: {
     users: {
       type: new GraphQLNonNull(new GraphQLList(UserType)),
-      resolve: async () => {
-        const response = await fetch('http://localhost:3000/users');
-        const data = await response.json();
-        return data;
-      },
+      resolve: getUsers,
     },
     user: {
       type: UserType,
       args: { id: { type: new GraphQLNonNull(GraphQLID) } },
-      resolve: async (_, { id }) => {
-        const response = await fetch(`http://localhost:3000/users/${id}`);
-        const data = await response.json();
-        return data;
-      },
+      resolve: getUser,
     },
     posts: {
       type: new GraphQLNonNull(new GraphQLList(PostType)),
-      resolve: async () => {
-        const response = await fetch('http://localhost:3000/posts');
-        const data = await response.json();
-        return data;
-      },
+      resolve: getPosts,
     },
     post: {
       type: PostType,
       args: { id: { type: new GraphQLNonNull(GraphQLID) } },
-      resolve: async (_, { id }) => {
-        const response = await fetch(`http://localhost:3000/posts/${id}`);
-        const data = await response.json();
-        return data;
-      },
+      resolve: getPost,
     },
   },
 });
